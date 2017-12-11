@@ -81,10 +81,10 @@ class DDPG(Model):
       obs_tp1_float     = tf.layers.flatten(self._obs_tp1_ph)
 
       # Normalize observations
-      obs_t_float       = tf.layers.batch_normalization(obs_t_float, axis=-1, trainable=False,
+      obs_t_float       = tf.contrib.layers.layer_norm(obs_t_float, trainable=False,
                                     center=False, scale=False, training=self._training)
-      obs_tp1_float     = tf.layers.batch_normalization(obs_tp1_float, axis=-1, trainable=False,
-                                    center=False, scale=False, training=self._training)
+      obs_tp1_float     = tf.contrib.layers.layer_norm(obs_tp1_float, trainable=False,
+                                    center=False, scale=False)
       actor   = self._actor_net
       critic  = self._critic_net
 
@@ -208,10 +208,10 @@ class DDPG(Model):
     with tf.variable_scope(scope, reuse=tf.AUTO_REUSE):
 
       x = tf.layers.dense(x, 400, tf.nn.relu, kernel_initializer=self.hidden_init(), name="dense1")
-      x = tf.layers.batch_normalization(x, axis=-1, training=self._training, name="batch_norm1")
+      x = tf.contrib.layers.layer_norm(x, name="batch_norm1")
 
       x = tf.layers.dense(x, 300, tf.nn.relu, kernel_initializer=self.hidden_init(), name="dense2")
-      x = tf.layers.batch_normalization(x, axis=-1, training=self._training, name="batch_norm2")
+      x = tf.contrib.layers.layer_norm(x, name="batch_norm2")
 
       x = tf.layers.dense(x, n_actions, tf.nn.tanh, kernel_initializer=self.output_init(), name="dense3")
 
@@ -235,7 +235,7 @@ class DDPG(Model):
 
       x = tf.layers.dense(x, 400, tf.nn.relu, kernel_initializer=self.hidden_init(),
                           kernel_regularizer=regularizer, name="dense1")
-      x = tf.layers.batch_normalization(x, axis=-1, training=self._training, name="batch_norm1")
+      x = tf.contrib.layers.layer_norm(x, name="batch_norm1")
 
       x = tf.concat([x, action], axis=-1)
 
