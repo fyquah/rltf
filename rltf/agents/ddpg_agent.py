@@ -212,3 +212,73 @@ class AgentDDPG(OffPolicyAgent):
       if t % self.save_freq == 0: self._save()
 
       self._signal_train_done()
+
+
+class SequentialAgentDDPG(AgentDDPG):
+
+  def train(self):
+
+    last_obs  = self.env.reset()
+
+    for t in range (self.start_step, self.max_steps+1):
+
+      # Store the latest obesrvation in the buffer
+      idx = self.replay_buf.store_frame(last_obs)
+
+      # Get an action to run
+      if self.learn_started:
+        noise   = self.action_noise.sample()
+        state   = self.replay_buf.encode_recent_obs()
+        action  = self.model.control_action(self.sess, state)
+        action  = action + noise
+  
+        # Add action noise to stats
+        self.act_noise_stats.append(noise)
+
+      else:
+        # Choose random action when model not initialized
+        action = self.env.action_space.sample()
+
+      # Run action
+      last_obs, reward, done, _ = self.env.step(action)
+
+      # Store the effect of the action taken upon last_obs
+      self.replay_buf.store_effect(idx, action, reward, done)
+
+      # Reset the environment if end of episode
+      if done:
+        last_obs = self.env.reset()
+        self.reset()
+
+      if (t >= self.start_train and t % self.train_freq == 0):
+
+        self.learn_started = True
+
+        # Sample the Replay Buffer
+        batch = self.replay_buf.sample(self.batch_size)
+
+        # Compose feed_dict
+        feed_dict = {
+          self.model.obs_t_ph:       batch["obs"],
+          self.model.act_t_ph:       batch["act"],
+          self.model.rew_t_ph:       batch["rew"],
+          self.model.obs_tp1_ph:     batch["obs_tp1"],
+          self.model.done_ph:        batch["done"],
+          self.actor_learn_rate_ph:  self.actor_opt_conf.lr_value(t),
+          self.critic_learn_rate_ph: self.critic_opt_conf.lr_value(t),
+          self.mean_ep_rew_ph:       self.mean_ep_rew,
+          self.best_mean_ep_rew_ph:  self.best_mean_ep_rew,
+        }
+
+        # Run a training step
+        self.summary, _ = self.sess.run([self.summary_op, self.model.train_op], feed_dict=feed_dict)
+
+        # Update target network
+        if t % self.update_target_freq == 0:
+          self.sess.run(self.model.update_target)
+
+      # if t % self.save_freq == 0: self._save()
+
+      self._log_progress(t)
+
+

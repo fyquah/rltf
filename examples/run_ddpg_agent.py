@@ -3,6 +3,7 @@ import numpy      as np
 import tensorflow as tf
 
 from rltf.agents        import AgentDDPG
+from rltf.agents.ddpg_agent        import SequentialAgentDDPG
 from rltf.env_wrap      import wrap_deepmind_ddpg
 from rltf.exploration   import OrnsteinUhlenbeckNoise
 from rltf.exploration   import GaussianNoise
@@ -99,8 +100,10 @@ def main():
   critic_lr = ConstSchedule(args.critic_lr)
 
   if args.grad_clip is None:
-    actor_opt_conf  = OptimizerConf(tf.train.AdamOptimizer, actor_lr,  epsilon=args.adam_epsilon)
-    critic_opt_conf = OptimizerConf(tf.train.AdamOptimizer, critic_lr, epsilon=args.adam_epsilon)
+    actor_opt_conf  = OptimizerConf(tf.train.AdamOptimizer, actor_lr,  
+                                    epsilon=args.adam_epsilon, name="AdamActor")
+    critic_opt_conf = OptimizerConf(tf.train.AdamOptimizer, critic_lr, 
+                                    epsilon=args.adam_epsilon, name="AdamCritic")
   else:
     opt_args = dict(epsilon=args.adam_epsilon, grad_clip=args.grad_clip)
     actor_opt_conf  = OptimizerConf(AdamGradClipOptimizer, actor_lr,  **opt_args)
@@ -146,7 +149,8 @@ def main():
   rltf.log.log_params(log_info, args)
 
   # Create the agent
-  ddpg_agent = AgentDDPG(**kwargs)
+  # ddpg_agent = AgentDDPG(**kwargs)
+  ddpg_agent = SequentialAgentDDPG(**kwargs)
 
   # Build the agent and the TF graph
   ddpg_agent.build()

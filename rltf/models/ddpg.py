@@ -50,7 +50,8 @@ class DDPG(Model):
     self.act_dtype = tf.float32
 
     # Initializers
-    self.hidden_init = init_hidden_uniform
+    # self.hidden_init = init_hidden_uniform
+    self.hidden_init = tf_utils.init_default
     self.output_init = init_output_uniform
 
     # Custom TF Tensors and Ops
@@ -109,15 +110,12 @@ class DDPG(Model):
     actor_opt       = self.actor_opt_conf.build()
     critic_opt      = self.critic_opt_conf.build()
 
-    actor_grads     = actor_opt.compute_gradients(actor_loss,   var_list=actor_vars)
-    critic_grads    = critic_opt.compute_gradients(critic_loss, var_list=critic_vars)
-
-    a_grad_tensors  = [grad for grad, var in actor_grads]
-    c_grad_tensors  = [grad for grad, var in critic_grads]
-
-    # Get the ops for updating the running mean and variance in batch norm layers
     batch_norm_ops  = tf.get_collection(tf.GraphKeys.UPDATE_OPS)
-    control_deps    = a_grad_tensors + c_grad_tensors + batch_norm_ops
+    with tf.control_dependencies(batch_norm_ops):
+      actor_grads     = actor_opt.compute_gradients(actor_loss,   var_list=actor_vars)
+      critic_grads    = critic_opt.compute_gradients(critic_loss, var_list=critic_vars)
+
+    control_deps    = self._group_control_deps(actor_grads, critic_grads)
 
     # Apply gradients only after both actor and critic have been differentiated
     with tf.control_dependencies(control_deps):
@@ -162,8 +160,22 @@ class DDPG(Model):
     else:
       critic_loss = tf.losses.mean_squared_error(target_q, agent_q)
     critic_loss    += tf.losses.get_regularization_loss(scope="agent_net/critic")
-
     return critic_loss
+
+
+  def _group_control_deps(self, actor_grads, critic_grads):
+    a_grad_tensors  = [grad for grad, var in actor_grads]
+    c_grad_tensors  = [grad for grad, var in critic_grads]
+
+    # Get the ops for updating the running mean and variance in batch norm layers
+    # batch_norm_ops  = tf.get_collection(tf.GraphKeys.UPDATE_OPS)
+    # control_deps    = a_grad_tensors + c_grad_tensors + batch_norm_ops
+    control_deps    = a_grad_tensors + c_grad_tensors
+    logger.debug("Control dependencies for apply_gradients():")
+    for t in control_deps:
+      logger.debug(t.name)
+    logger.debug("")
+    return control_deps
 
 
   def _restore(self, graph):
