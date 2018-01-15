@@ -128,7 +128,9 @@ class Agent:
       self.learn_started  = False
 
       # Create a session and initialize the model
-      self.sess = tf.Session()
+      config = tf.ConfigProto()
+      config.gpu_options.allow_growth = True
+      self.sess = tf.Session(config=config)
       self.sess.run(tf.global_variables_initializer())
       self.sess.run(tf.local_variables_initializer())
 

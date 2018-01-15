@@ -27,8 +27,6 @@ def dqn_nn(img_in, n_actions, scope):
     with tf.variable_scope("action_value"):
       x = tf.layers.dense(x, units=512,       activation=tf.nn.relu)
       x = tf.layers.dense(x, units=256,       activation=tf.nn.relu)
-      x = tf.layers.dense(x, units=150,       activation=tf.nn.relu)
-      x = tf.layers.dense(x, units=150,       activation=tf.nn.relu)
       x = tf.layers.dense(x, units=n_actions, activation=None)
     return x
 
@@ -36,7 +34,7 @@ def dqn_nn(img_in, n_actions, scope):
 class DQN(Model):
   """ Class for the DQN model """
 
-  def __init__(self, obs_shape, n_actions, opt_conf, gamma, huber_loss=True):
+  def __init__(self, obs_shape, n_actions, opt_conf, gamma, nn_model, huber_loss=True):
     """
     Args:
       obs_shape: list. Shape of the observation tensor
@@ -51,10 +49,10 @@ class DQN(Model):
     self.gamma      = gamma
     self.opt_conf   = opt_conf
     self.huber_loss = huber_loss
-    self.nn_model   = dqn_nn
+    self.nn_model   = nn_model
 
     self.obs_shape  = obs_shape
-    self.obs_dtype  = tf.uint8
+    self.obs_dtype  = tf.float32
     self.n_actions  = n_actions
     self.act_shape  = []
     self.act_dtype  = tf.uint8
@@ -74,8 +72,8 @@ class DQN(Model):
     # self._done_ph     = tf.placeholder(tf.bool,    [None],                  name="done_ph")
 
     # In this case, casting on GPU ensures lower data transfer times
-    obs_t_float   = tf.cast(self._obs_t_ph,   tf.float32) / 255.0
-    obs_tp1_float = tf.cast(self._obs_tp1_ph, tf.float32) / 255.0
+    obs_t_float   = tf.cast(self._obs_t_ph,   tf.float32)
+    obs_tp1_float = tf.cast(self._obs_tp1_ph, tf.float32)
     act_t         = tf.cast(self._act_t_ph,   tf.int32)
 
     # Construct the Q-network and the target network
@@ -126,4 +124,6 @@ class DQN(Model):
   def control_action(self, sess, state):
     q_vals  = sess.run(self._q, feed_dict={self.obs_t_ph: state[None,:]})
     action  = np.argmax(q_vals)
+    assert q_vals.shape[0] == 1
+    assert len(q_vals.shape) == 2
     return action
