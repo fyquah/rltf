@@ -27,6 +27,8 @@ def dqn_nn(img_in, n_actions, scope):
     with tf.variable_scope("action_value"):
       x = tf.layers.dense(x, units=512,       activation=tf.nn.relu)
       x = tf.layers.dense(x, units=256,       activation=tf.nn.relu)
+      x = tf.layers.dense(x, units=150,       activation=tf.nn.relu)
+      x = tf.layers.dense(x, units=150,       activation=tf.nn.relu)
       x = tf.layers.dense(x, units=n_actions, activation=None)
     return x
 

@@ -90,7 +90,7 @@ def main():
 
   # Create the exploration schedule
   # exploration = PiecewiseSchedule([(0, 1.0), (1e7, 0.01)], outside_value=0.01)
-  exploration = PiecewiseSchedule([(0, 1.0), (1e6, 0.1)], outside_value=0.01)
+  exploration = PiecewiseSchedule([(0, 1.0), (1e7, 0.1)], outside_value=0.01)
 
   # Set the Agent class keyword arguments
   agent_kwargs = dict(
