@@ -41,9 +41,11 @@ class AgentDQN(OffPolicyAgent):
     self.update_target_freq = update_target_freq
 
     # Get environment specs
-    img_h, img_w, img_c = self.env.observation_space.shape
-    obs_shape = [img_h, img_w, obs_hist_len * img_c]
-    buf_obs_shape = [img_h, img_w, img_c]
+    obs_shape = self.env.observation_space.shape
+    if isinstance(obs_shape, int):
+        obs_shape = [obs_shape]
+    obs_shape = list(obs_shape)
+    buf_obs_shape = obs_shape
     n_actions = self.env.action_space.n
 
     model_kwargs["obs_shape"] = obs_shape

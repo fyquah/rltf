@@ -18,14 +18,15 @@ def dqn_nn(img_in, n_actions, scope):
   """
   with tf.variable_scope(scope, reuse=False):
     x = img_in
-    with tf.variable_scope("convnet"):
-      # original architecture
-      x = tf.layers.conv2d(x, filters=32, kernel_size=8, strides=4, padding="SAME", activation=tf.nn.relu)
-      x = tf.layers.conv2d(x, filters=64, kernel_size=4, strides=2, padding="SAME", activation=tf.nn.relu)
-      x = tf.layers.conv2d(x, filters=64, kernel_size=3, strides=1, padding="SAME", activation=tf.nn.relu)
-    x = tf.layers.flatten(x)
+    # with tf.variable_scope("convnet"):
+    #   # original architecture
+    #   x = tf.layers.conv2d(x, filters=32, kernel_size=8, strides=4, padding="SAME", activation=tf.nn.relu)
+    #   x = tf.layers.conv2d(x, filters=64, kernel_size=4, strides=2, padding="SAME", activation=tf.nn.relu)
+    #   x = tf.layers.conv2d(x, filters=64, kernel_size=3, strides=1, padding="SAME", activation=tf.nn.relu)
+    # x = tf.layers.flatten(x)
     with tf.variable_scope("action_value"):
       x = tf.layers.dense(x, units=512,       activation=tf.nn.relu)
+      x = tf.layers.dense(x, units=256,       activation=tf.nn.relu)
       x = tf.layers.dense(x, units=n_actions, activation=None)
     return x
 
