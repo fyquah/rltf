@@ -1,3 +1,5 @@
+import random
+
 import gym
 import numpy as np
 import tensorflow as tf
@@ -53,7 +55,8 @@ class AgentDQN(OffPolicyAgent):
     model_kwargs["opt_conf"]  = opt_conf
 
     self.model      = model_type(**model_kwargs)
-    self.replay_buf = ReplayBuffer(memory_size, buf_obs_shape, np.uint8, [], np.uint8, obs_hist_len)
+    self.replay_buf = ReplayBuffer(memory_size, buf_obs_shape,
+            np.float32, [], np.uint8, obs_hist_len)
 
     # Configure what information to log
     super()._build_log_info()
@@ -106,6 +109,7 @@ class AgentDQN(OffPolicyAgent):
       if self.learn_started:
         # Run epsilon greedy policy
         epsilon = self.exploration.value(t)
+
         if np.random.uniform(0,1) < epsilon:
           action = self.env.action_space.sample()
         else:
